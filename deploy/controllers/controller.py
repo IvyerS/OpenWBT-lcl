@@ -31,8 +31,8 @@ esekf = ESEKF(dt=1. / 50.)
 torch.set_printoptions(precision=3)
 np.set_printoptions(precision=3)
 
-usb_left = UsbHandle("/dev/ttyACM0")
-usb_right = UsbHandle("/dev/ttyACM1")
+usb_left = UsbHandle("/dev/ttyACM1")
+usb_right = UsbHandle("/dev/ttyACM0")
 # Start receiving threads
 usb_left.start_receiving()
 usb_right.start_receiving()
@@ -91,7 +91,11 @@ class Controller_loco(Controller):
         # breakpoint()
         self.loco_low_level_policy.gait_planner.update_gait_phase(self.stance_command)
         self.obs, self.action, target_dof_pos[self.config.action_idx] = self.loco_low_level_policy.inference(
-            self.loco_cmd, gravity_orientation, omega, qj_obs[self.config.dof_idx], dqj_obs[self.config.dof_idx])
+            self.loco_cmd,
+            gravity_orientation,
+            omega,
+            qj_obs[self.config.dof_idx],
+            dqj_obs[self.config.dof_idx])
         print('[run] loco_cmd', self.loco_cmd)
         return target_dof_pos
 
@@ -121,10 +125,15 @@ class Controller_squat(Controller):
     def run(self, cmd_raw, gravity_orientation, omega, qj_obs, dqj_obs, target_dof_pos):
         self.compute_squat_cmd(cmd_raw)
         self.obs, self.action, target_dof_pos[self.config.action_idx] = self.squat_low_level_policy.inference(
-            self.squat_cmd, gravity_orientation, omega, qj_obs[self.config.dof_idx], dqj_obs[self.config.dof_idx])
+            self.squat_cmd,
+            gravity_orientation,
+            omega,
+            qj_obs[self.config.dof_idx],
+            dqj_obs[self.config.dof_idx])
         # print('[run] obs', self.obs)
         # print('[run] action', self.action)
         # print('[run] target_dof_pos', target_dof_pos)
+        target_dof_pos[[5,11]] = 0. # TODO: will remove this line later
         print('[run] squat_cmd', self.squat_cmd)
         return target_dof_pos
 
@@ -156,8 +165,7 @@ class Runner:
         return self.squat_controller.squat_cmd[0] > 0.72 and self.squat_controller.squat_cmd[1] < 0.05
 
     def stopable(self):
-        return abs(self.loco_controller.loco_cmd[0]
-                  ) < 0.1 and self.loco_controller.loco_cmd[1] < 0.1 and self.loco_controller.loco_cmd[2] < 0.1
+        return abs(self.loco_controller.loco_cmd[0]) < 0.1 and self.loco_controller.loco_cmd[1] < 0.1 and self.loco_controller.loco_cmd[2] < 0.1
 
     def post_squat(self):
         if self.locoable():
@@ -169,8 +177,7 @@ class Runner:
 
     def post_loco(self):
         if self.stopable():
-            if usb_left.stopgait_signal:
-                self.loco_controller.stance_command = True
+            self.loco_controller.stance_command = usb_left.stopgait_signal
             self.transfer_to_squat = usb_right.run_squat_signal
             if self.transfer_to_squat:
                 self.squat_controller.set_transition_count()
@@ -625,6 +632,61 @@ class Runner_online_real_dexhand(Runner_online_real):
             with dual_hand_data_lock:
                 dual_hand_state_array[:] = state_data
                 dual_hand_action_array[:] = action_data
+
+
+    def run_loco_hand(self, debug=True, manual=True):
+        self.refresh_prop()
+        # create observation
+        # try:
+        #     quat = esekf.update(self.quat, self.ang_vel)
+        # except:
+        #     quat = self.quat
+        #     print('warn===============================================')
+        gravity_orientation = get_gravity_orientation(self.quat)
+        gravity_orientation = kf.update(gravity_orientation)
+        omega = self.ang_vel.copy()
+        qj_obs = self.qj.copy()
+        dqj_obs = self.dqj.copy()
+        target_dof_pos = self.target_dof_pos.copy()
+
+        if manual:
+            cmd_raw = self.loco_controller.config.cmd_debug.copy()
+            cmd_raw[0] = usb_left.lx
+            cmd_raw[1] = usb_left.ly
+            cmd_raw[2] = usb_right.ry
+        else:
+            cmd_raw = None
+
+        if not self.transition_loco():
+            self.target_dof_pos = self.loco_controller.run(
+                cmd_raw,
+                gravity_orientation,
+                omega,
+                qj_obs,
+                dqj_obs,
+                target_dof_pos)
+
+        self.pd_control(self.loco_controller, self.target_dof_pos)
+        if usb_right.damping_signal:
+            self.damping_state()
+        # send the command
+        if debug:
+            create_damping_cmd(self.low_cmd)
+
+        self.grasp()
+
+        current_control_timestamp = time.time()
+        time_until_next_step = self.config.control_dt - (current_control_timestamp - self.last_control_timestamp)
+        if time_until_next_step > 0:
+            time.sleep(time_until_next_step)
+        current_control_timestamp = time.time()
+        # print('loco fps: ', (1 / (current_control_timestamp - self.last_control_timestamp)), 'Hz')
+        self.last_control_timestamp = current_control_timestamp
+
+        self.ctrl_dual_hand(self.left_q_target, self.right_q_target)
+        self.send_cmd(self.low_cmd)
+        self.counter += 1
+        self.post_loco()
 
     def run_squat_hand(self, debug=True, manual=True):
         self.refresh_prop()

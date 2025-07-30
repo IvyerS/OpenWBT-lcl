@@ -1,5 +1,5 @@
 <div align="center">
-  <h1 align="center"> OpenWBT硬件清单与环境配置 </h1>
+  <h1 align="center"> OpenWBT 硬件清单与环境配置 </h1>
   <h3 align="center"> 银河通用机器人 · 清华大学 </h3>
 
 [中文](installation_zh.md) | [英文](installation.md)

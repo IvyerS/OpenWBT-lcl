@@ -3,7 +3,6 @@ import threading
 import time
 from typing import Callable, Dict, Optional
 
-
 class UsbHandle:
     KEY_1 = 1
     KEY_2 = 2
@@ -17,7 +16,10 @@ class UsbHandle:
     KEY_9 = 10
 
     KEY_STATUS = ["KEY_DOWN", "KEY_UP", "KEY_LONG", "KEY_CLICK"]
-    KEY_NAMES = ["KEY_1", "KEY_2", "KEY_3", "KEY_4", "KEY_5", "KEY_6", "KEY_PULLEY", "KEY_7", "KEY_8", "KEY_9"]
+    KEY_NAMES = [
+        "KEY_1", "KEY_2", "KEY_3", "KEY_4", "KEY_5",
+        "KEY_6", "KEY_PULLEY", "KEY_7", "KEY_8", "KEY_9", "KEY_TRIGGER", "KEY_NONE", "KEY_RESERVED"
+    ]
 
     def __init__(self, port: str):
         self.serial = serial.Serial()
@@ -41,6 +43,7 @@ class UsbHandle:
         self.ly = 0.0
         self.rx = 0.0
         self.ry = 0.0
+
 
         try:
             self.serial.open()
@@ -114,32 +117,32 @@ class UsbHandle:
         key_idx = frame['keyIdx']
         status = frame['value1'] - 1
 
-        if key_idx != self.KEY_PULLEY:
+        if key_idx != self.KEY_PULLEY: #  don't process the pulley
             idx = key_idx - 1
-            # print(f"left {self.KEY_NAMES[idx]} -> {self.KEY_STATUS[status]}")
-            # L1: left hand grasping, L2: left hand releasing
-            if self.KEY_NAMES[idx] == "KEY_9" and self.KEY_STATUS[status] == "KEY_DOWN":
-                self.left_hand_grasp_state = True
-                # print('Left hand grasp: ', self.left_hand_grasp_state)
-            elif self.KEY_NAMES[idx] == "KEY_8" and self.KEY_STATUS[status] == "KEY_DOWN":
-                self.left_hand_grasp_state = False
-                # print('Left hand release: ', self.left_hand_grasp_state)
 
-            # left A: switching to the locomotion mode
-            elif self.KEY_NAMES[idx] == "KEY_1" and self.KEY_STATUS[status] == "KEY_DOWN":
-                self.run_loco_signal = True
+            # left KEY_1: switching to the locomotion mode
+            if self.KEY_NAMES[idx] == "KEY_1" and self.KEY_STATUS[status] == "KEY_DOWN":
+                self.run_loco_signal = True            
+                self.stopgait_signal = True #  stop the gait when switching to the locomotion mode
                 # print('Run loco signal: ', self.run_loco_signal)
             elif self.KEY_NAMES[idx] == "KEY_1" and self.KEY_STATUS[status] == "KEY_UP":
                 self.run_loco_signal = False
                 # print('Run loco signal: ', self.run_loco_signal)
 
             elif self.KEY_NAMES[idx] == "KEY_2" and self.KEY_STATUS[status] == "KEY_DOWN":
-                self.stopgait_signal = True
-            elif self.KEY_NAMES[idx] == "KEY_2" and self.KEY_STATUS[status] == "KEY_UP":
-                self.stopgait_signal = False
+                self.stopgait_signal = not self.stopgait_signal
+
+            # 左扳机按钮
+            elif self.KEY_NAMES[idx] == "KEY_TRIGGER" and frame['value2'] > 50:
+                self.left_hand_grasp_state = True
+                print('Left hand grasp...')
+                # print(f"Left triger: v1={frame['value1']}, v2={frame['value2']}")
+            elif self.KEY_NAMES[idx] == "KEY_TRIGGER" and frame['value2'] < 50:
+                self.left_hand_grasp_state = False
+                # print('Left hand release...')
         else:
-            self.lx = (1853 - frame['value2']) / 2500
-            self.ly = (frame['value1'] - 1853) / 2500
+            self.lx = (50 - frame['value2']) / 50
+            self.ly = (frame['value1'] - 50) / 50
             # print(f"left_pulley | value1={frame['value1']} value2={frame['value2']}")
 
     def right_callback(self, frame: Dict):
@@ -161,8 +164,8 @@ class UsbHandle:
                 self.start_signal = False
                 self.run_signal = False
 
-            # press the right D briefly: switching to the damping mode
-            # long press the right D: exit
+            # press the right KEY_2 briefly: switching to the damping mode
+            # long press the right KEY_2: exit
             elif self.KEY_NAMES[idx] == "KEY_2" and self.KEY_STATUS[status] == "KEY_DOWN":
                 self.damping_signal = True
                 # print('Zero torque signal: ', self.damping_signal)
@@ -174,7 +177,7 @@ class UsbHandle:
             # self.exit_signal = False
             # print('Zero torque signal: ', self.damping_signal)
 
-            # right A: switching to the squating mode
+            # right KEY_1: switching to the squating mode
             elif self.KEY_NAMES[idx] == "KEY_1" and self.KEY_STATUS[status] == "KEY_DOWN":
                 self.run_squat_signal = True
                 # print('Run squat signal: ', self.run_squat_signal)
@@ -182,16 +185,18 @@ class UsbHandle:
                 self.run_squat_signal = False
                 # print('Run squat signal: ', self.run_squat_signal)
 
-            # R1: right hand grasping, R2: right hand releasing
-            elif self.KEY_NAMES[idx] == "KEY_9" and self.KEY_STATUS[status] == "KEY_DOWN":
+            # 右扳机按钮
+            elif self.KEY_NAMES[idx] == "KEY_TRIGGER" and frame['value2'] > 50:
                 self.right_hand_grasp_state = True
-                # print('Right hand grasp: ', self.right_hand_grasp_state)
-            elif self.KEY_NAMES[idx] == "KEY_8" and self.KEY_STATUS[status] == "KEY_DOWN":
+                print('Right hand grasp...')
+                # print(f"Right triger: v1={frame['value1']}, v2={frame['value2']}")
+            elif self.KEY_NAMES[idx] == "KEY_TRIGGER" and frame['value2'] < 50:
                 self.right_hand_grasp_state = False
-                # print('Right hand release: ', self.right_hand_grasp_state)
+                # print('Right hand release...')
         else:
-            self.rx = (1853 - frame['value2']) / 2500
-            self.ry = (frame['value1'] - 1853) / 2500
+            self.rx = (frame['value2'] - 50) / 50
+            self.ry = (50 - frame['value1']) / 50
+        # print('right', self.rx, self.ry)
 
 
 # def main():

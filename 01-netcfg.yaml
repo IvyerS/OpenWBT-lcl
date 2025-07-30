@@ -5,7 +5,7 @@ network:
     wlan0:
       dhcp4: yes  # enable DHCP
       dhcp4-overrides:
-        route-metric: 2000
+        route-metric: 2000 # modify the Metric value of the DHCP assigned route
       access-points:
         "your-wifi-name":
           password: "your-wifi-password"

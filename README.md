@@ -10,7 +10,8 @@
 :page_with_curl:[Paper](https://www.arxiv.org/pdf/2505.10918) | :house:[Website](https://zzk273.github.io/R2S2/) | :film_projector:[Video](https://www.youtube.com/watch?v=EmWLJROMeB0)
 
 </div>
-
+> 🔄 This project now supports teleoperation simulation in Isaac Sim and is under active maintenance.
+🚧 Note that official Isaac Sim is still under active development, so interfaces and features may change frequently.
 
 # Introduction
 The technical implementation of this project is mainly supported by [R2S2](https://zzk273.github.io/R2S2/). This repository implements **whole body teleoperation** of the Unitree G1 and H1 humanoid robot using Apple Vision Pro. The system supports **both real robots and simulation environments**. **Only one tele-operator** is needed to control the robot to perform movements such as walking, squatting, bending, grasping, and lifting, thereby significantly expanding the robot's operational capabilities and enabling it to accomplish a wider range of tasks.
@@ -105,12 +106,28 @@ Running in the Real:
 source /opt/ros/foxy/setup.sh; source ~/unitree_ros2/setup.sh
 python -m deploy.run_teleoperation_real --config run_teleoperation.yaml --net eno1
 ```
-Running in the Simulator:
+Running in the mujoco Simulator:
 ```bash
 source /opt/ros/foxy/setup.sh; source ~/unitree_ros2/setup.sh
 python -m deploy.run_teleoperation_mujoco --config run_teleoperation.yaml
 ```
-Note:
+
+**Run in Isaac Sim (V4.5.0):**
+
+- Ensure Isaac Sim V4.5.0 is installed. Refer to the [official documentation](https://docs.isaacsim.omniverse.nvidia.com/4.5.0/index.html)for installation instructions.
+
+If using VR devices such as Vision Pro, run the following two commands in separate terminals to start simulation:
+```bash
+bash start_ik_server.sh       # Terminal 1
+bash start_isaacsim_vision.sh # Terminal 2
+```
+
+For non-VR devices, run:
+```bash
+bash start_isaacsim.sh
+```
+
+*Note:*
 
 - Replace eno1 with the correct network interface name.
 - To enter debug mode (action from policy will not be executed) for real robot teleoperation, run:
@@ -151,6 +168,7 @@ If images fail to display in VR, please double-check the following:
 - \[x\] Release the R2S2 paper with demos.
 - \[x\] Release Unitree G1 whole body teleoperation in real world.
 - \[x\] Release Unitree G1 whole body teleoperation in mujoco.
+- \[x\] Release Unitree G1 whole body teleoperation in Isaac Sim.
 - \[ \] Release Unitree H1 whole body teleoperation.
 - \[ \] Release Latent Skill Space.
 

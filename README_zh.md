@@ -10,6 +10,9 @@
 :page_with_curl:[论文](https://www.arxiv.org/pdf/2505.10918) | :house:[主页](https://zzk273.github.io/R2S2/) | :film_projector:[视频](https://www.youtube.com/watch?v=EmWLJROMeB0)
 </div>
 
+> 🔄 本项目现已支持在Isaac Sim中进行遥操仿真，并在持续维护中。
+> 🚧 注意官方Isaac Sim 正在持续开发中，接口和功能可能会频繁变化。 
+
 
 # 介绍
 该项目的技术实现主要由[R2S2](https://zzk273.github.io/R2S2/)支持。该仓库实现了使用 Apple Vision Pro 对宇树（Unitree）G1 和 H1 人形机器人进行**全身**的**遥操作控制**，该系统**不仅支持实机也能使用户在仿真中遥操**，基于该系统**只需要一个遥操员**就可以控制机器人像人一样运动、蹲、弯、抓，搬等，大幅度扩展了机器人作业空间以实现更多任务。
@@ -101,18 +104,33 @@ python image_server.py
 ```bash
 sudo chmod -R 777 /dev/ttyACM0; sudo chmod -R 777 /dev/ttyACM1
 ```
-真机运行：
+**真机运行：**
 ``` bash
 source /opt/ros/foxy/setup.sh; source ~/unitree_ros2/setup.sh
 python -m deploy.run_teleoperation_real --config run_teleoperation.yaml --net eno1
 ```
-仿真器中运行：
+**在mujoco中运行：**
 ```bash
 source /opt/ros/foxy/setup.sh; source ~/unitree_ros2/setup.sh
 python -m deploy.run_teleoperation_mujoco --config run_teleoperation.yaml
+# 实时显示第一视角画面则运行：python -m deploy.run_teleoperation_mujoco_vision --config run_teleoperation_vision.yaml --net eno1 --save_data
 ```
-注：
-- eno1 需要换成正确的网口名称
+**在isaac sim(V4.5.0) 中运行：**
+- 确保已经安装Isaac Sim V4.5.0,安装教程参考[官方文档](https://docs.isaacsim.omniverse.nvidia.com/4.5.0/index.html)
+  
+  如有使用vision pro等vr设备，请先分别在两个终端运行如下两行命令进入仿真：  
+
+  ```bash
+  bash start_ik_server.sh       # 终端1
+  bash start_isaacsim_vision.sh # 终端2
+  ```
+  否则只需在新终端运行：
+  ```bash
+  bash start_isaacsim.sh
+  ```
+
+*注：*
+- 真机部署时，eno1 需要换成正确的网口名称
 - 可进入调试模式，此时policy的action不会被执行
 ```bash
 source /opt/ros/foxy/setup.sh; source ~/unitree_ros2/setup.sh
@@ -148,6 +166,7 @@ python -m deploy.run_teleoperation_real --config run_teleoperation.yaml --net en
 - \[x\] 发布R2S2论文和演示视频  
 - \[x\] 发布 Unitree G1 的真实世界全身遥操作功能  
 - \[x\] 发布 Unitree G1 的 Mujoco 仿真全身遥操作功能  
+- \[x\] 发布 Unitree G1 的 Isaac Sim 仿真全身遥操作功能  
 - \[ \] 发布 Unitree H1 的全身遥操作功能  
 - \[ \] 发布 Latent Skill Space  
 
