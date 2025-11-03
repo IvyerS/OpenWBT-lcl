@@ -321,7 +321,7 @@ if __name__ == "__main__":
         'fps': 30,
         'head_camera_type': 'opencv',
         'head_camera_image_shape': [480, 1280],  #[1520, 3840]                          # Head camera resolution
-        'head_camera_id_numbers': [0],
+        'head_camera_id_numbers': [2],                                      # '/dev/video2' (opencv)
 
         # 'fps':30,                                                          # frame per second
         # 'head_camera_type': 'realsense',                                  # opencv or realsense
