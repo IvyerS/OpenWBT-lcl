@@ -20,7 +20,8 @@ class UsbHandle:
         "KEY_1", "KEY_2", "KEY_3", "KEY_4", "KEY_5",
         "KEY_6", "KEY_PULLEY", "KEY_7", "KEY_8", "KEY_9", "KEY_TRIGGER", "KEY_NONE", "KEY_RESERVED"
     ]
-
+    print("Starting USB handle test 1...")
+    
     def __init__(self, port: str):
         self.serial = serial.Serial()
         self.serial.port = port
@@ -43,7 +44,6 @@ class UsbHandle:
         self.ly = 0.0
         self.rx = 0.0
         self.ry = 0.0
-
 
         try:
             self.serial.open()
