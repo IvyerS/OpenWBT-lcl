@@ -162,8 +162,6 @@ class EnhancedUnitreeController:
             'stopgait_signal': self.stopgait_signal,
             'left_hand_grasp_state': self.left_hand_grasp_state,
             'right_hand_grasp_state': self.right_hand_grasp_state,
-            'joystick': self.get_joystick_values(),
-            'buttons': self.button_state_machine.get_all_states()
         }
 
 class EnhancedCustom:
@@ -230,14 +228,14 @@ class EnhancedCustom:
             self.controller.run_squat_signal = False
         
         # 摇杆控制手抓状态
-        if joystick_values['Rx'] > 0.9:
+        if joystick_values['Ry'] > 0.9:
             self.controller.right_hand_grasp_state = True
-        elif joystick_values['Rx'] < 0.2:
+        elif joystick_values['Ry'] < 0.2:
             self.controller.right_hand_grasp_state = False
 
-        if joystick_values['Lx'] > 0.9:
+        if joystick_values['Ly'] > 0.9:
             self.controller.left_hand_grasp_state = True
-        elif joystick_values['Lx'] < 0.2:
+        elif joystick_values['Ly'] < 0.2:
             self.controller.left_hand_grasp_state = False
 
     def stop(self):
@@ -339,7 +337,8 @@ class UnitreeControllerService:
         """获取服务状态"""
         return {
             'is_running': self.is_running,
-            'signals': self.controller.get_all_signals() if self.controller else {}
+            'signals': self.controller.get_all_signals() if self.controller else {},
+            'joystick': self.controller.get_joystick_values() if self.controller else {}
         }
 
 # 使用示例和测试

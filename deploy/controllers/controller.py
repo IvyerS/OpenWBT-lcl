@@ -14,6 +14,8 @@ from deploy.helpers.command_helper import create_damping_cmd, create_lower_dampi
 from deploy.helpers.KF import ESEKF, IMUKF, IMUEKF
 from deploy.controllers.handle_controller import UsbHandle
 
+from deploy.controllers.service_unitree import UnitreeControllerService
+
 from unitree_sdk2py.core.channel import ChannelPublisher, ChannelFactoryInitialize
 from unitree_sdk2py.core.channel import ChannelSubscriber, ChannelFactoryInitialize
 from unitree_sdk2py.idl.default import unitree_hg_msg_dds__LowCmd_, unitree_hg_msg_dds__LowState_
@@ -31,14 +33,19 @@ esekf = ESEKF(dt=1. / 50.)
 torch.set_printoptions(precision=3)
 np.set_printoptions(precision=3)
 
-usb_left = UsbHandle("/dev/ttyACM1")
-usb_right = UsbHandle("/dev/ttyACM0")
-# Start receiving threads
-usb_left.start_receiving()
-usb_right.start_receiving()
-# Register callbacks
-usb_left.register_callback(usb_left.left_callback)
-usb_right.register_callback(usb_right.right_callback)
+
+# Initialize Unitree handles to replace all of these global variables 修改遥控器的使用方式，改为使用service
+service_controller = UnitreeControllerService()
+service_controller.start()
+
+# usb_left = UsbHandle("/dev/ttyACM1")
+# usb_right = UsbHandle("/dev/ttyACM0")
+# # Start receiving threads
+# usb_left.start_receiving()
+# usb_right.start_receiving()
+# # Register callbacks
+# usb_left.register_callback(usb_left.left_callback)
+# usb_right.register_callback(usb_right.right_callback)
 
 
 class Controller:
@@ -169,7 +176,9 @@ class Runner:
 
     def post_squat(self):
         if self.locoable():
-            self.transfer_to_loco = usb_left.run_loco_signal
+            # self.transfer_to_loco = usb_left.run_loco_signal
+            self.transfer_to_loco = service_controller.get_status().values['signal'].values['run_loco_signal']
+    
             if self.transfer_to_loco:
                 self.loco_controller.stance_command = False
                 self.loco_controller.set_transition_count()
@@ -177,8 +186,10 @@ class Runner:
 
     def post_loco(self):
         if self.stopable():
-            self.loco_controller.stance_command = usb_left.stopgait_signal
-            self.transfer_to_squat = usb_right.run_squat_signal
+           #self.loco_controller.stance_command = usb_left.stopgait_signal
+            self.loco_controller.stance_command = service_controller.get_status().values['signal'].values['stopgait_signal']
+            # self.transfer_to_squat = usb_right.run_squat_signal
+            self.transfer_to_squat = service_controller.get_status().values['signal'].values['run_squat_signal']
             if self.transfer_to_squat:
                 self.squat_controller.set_transition_count()
 
@@ -327,7 +338,8 @@ class Runner_online_real(Runner_online):
     def damping_state(self):
         print("Enter damping state.")
         print("Waiting for the Right_Start signal...")
-        while not usb_right.start_signal:
+        while not service_controller.get_status().values['signal'].values['start_signal']:
+        # while not usb_right.start_signal:
             create_damping_cmd(self.low_cmd)
             self.send_cmd(self.low_cmd)
             time.sleep(self.config.control_dt)
@@ -357,7 +369,8 @@ class Runner_online_real(Runner_online):
         print("Enter default pos state.")
         print("Waiting for the Right_Start_Long signal...")
 
-        while not usb_right.run_signal:
+        # while not usb_right.run_signal:
+        while not service_controller.get_status().values['signal'].values['run_signal']:
             self.pd_control(self.default_controller, default_pos)
             self.send_cmd(self.low_cmd)
             time.sleep(self.config.control_dt)
@@ -405,9 +418,12 @@ class Runner_online_real(Runner_online):
 
         if manual:
             cmd_raw = self.loco_controller.config.cmd_debug.copy()
-            cmd_raw[0] = usb_left.lx
-            cmd_raw[1] = usb_left.ly
-            cmd_raw[2] = usb_right.ry
+            # cmd_raw[0] = usb_left.lx
+            # cmd_raw[1] = usb_left.ly
+            # cmd_raw[2] = usb_right.ry
+            cmd_raw[0] = service_controller.get_status().values['joystick'].values['Lx']
+            cmd_raw[1] = service_controller.get_status().values['joystick'].values['Ly']
+            cmd_raw[2] = service_controller.get_status().values['joystick'].values['Ry']
         else:
             cmd_raw = None
 
@@ -416,7 +432,8 @@ class Runner_online_real(Runner_online):
                                                            target_dof_pos)
 
         self.pd_control(self.loco_controller, self.target_dof_pos)
-        if usb_right.damping_signal:
+        # if usb_right.damping_signal:
+        if service_controller.get_status().values['signal'].values['damping_signal']:
             self.damping_state()
         # send the command
         if debug:
@@ -447,8 +464,10 @@ class Runner_online_real(Runner_online):
 
         if manual:
             cmd_raw = self.squat_controller.config.cmd_debug.copy()
-            cmd_raw[0] = usb_left.lx  # height
-            cmd_raw[1] = usb_right.rx
+            cmd_raw[0] = service_controller.get_status().values['joystick'].values['Lx']
+            cmd_raw[1] = service_controller.get_status().values['joystick'].values['Rx']
+            # cmd_raw[0] = usb_left.lx  # height
+            # cmd_raw[1] = usb_right.rx
         else:
             cmd_raw = None
 
@@ -457,7 +476,8 @@ class Runner_online_real(Runner_online):
 
         self.transition_squat()
         self.pd_control(self.squat_controller, self.target_dof_pos)
-        if usb_right.damping_signal:
+        # if usb_right.damping_signal:
+        if service_controller.get_status().values['signal'].values['damping_signal']:
             self.damping_state()
         # send the command
         if debug:
@@ -559,7 +579,8 @@ class Runner_online_real_dexhand(Runner_online_real):
             print("[Dex3_1_Controller] Waiting to subscribe dds...")
 
     def send_cmd(self, cmd: Union[LowCmdGo, LowCmdHG]):
-        if abs(self.tau_record).max() > 100 or usb_right.damping_signal:  # abs(self.tau_record).max() > 100 or
+        if abs(self.tau_record).max() > 100 or service_controller.get_status().values['signal'].values['damping_signal']:
+        # if abs(self.tau_record).max() > 100 or usb_right.damping_signal:  # abs(self.tau_record).max() > 100 or
             print("large tau: ", np.arange(29)[abs(self.tau_record) > 100])
             create_damping_cmd(self.low_cmd)
             cmd = self.low_cmd
@@ -617,12 +638,14 @@ class Runner_online_real_dexhand(Runner_online_real):
         dual_hand_action_array = Array('d', 14, lock=False)
         state_data = np.concatenate((np.array(self.left_hand_state_array[:]), np.array(self.right_hand_state_array[:])))
 
-        if usb_left.left_hand_grasp_state == True:
+       #if usb_left.left_hand_grasp_state == True:
+        if service_controller.get_status().values['signal'].values['left_hand_grasp_state'] == True:
             self.left_q_target = np.array([0.0, 0.5, 1.0, -1.0, -1.0, -1.0, -1.0])
         else:
             self.left_q_target = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 
-        if usb_right.right_hand_grasp_state == True:
+        if service_controller.get_status().values['signal'].values['right_hand_grasp_state'] == True:
+        # if usb_right.right_hand_grasp_state == True:
             self.right_q_target = np.array([0.0, -0.5, -1.0, 1.0, 1.0, 1.0, 1.0])
         else:
             self.right_q_target = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
@@ -651,9 +674,12 @@ class Runner_online_real_dexhand(Runner_online_real):
 
         if manual:
             cmd_raw = self.loco_controller.config.cmd_debug.copy()
-            cmd_raw[0] = usb_left.lx
-            cmd_raw[1] = usb_left.ly
-            cmd_raw[2] = usb_right.ry
+            cmd_raw[0] = service_controller.get_status().values['joystick'].values['Lx']
+            cmd_raw[1] = service_controller.get_status().values['joystick'].values['Ly']
+            cmd_raw[2] = service_controller.get_status().values['joystick'].values['Ry']
+            # cmd_raw[0] = usb_left.lx
+            # cmd_raw[1] = usb_left.ly
+            # cmd_raw[2] = usb_right.ry
         else:
             cmd_raw = None
 
@@ -667,7 +693,8 @@ class Runner_online_real_dexhand(Runner_online_real):
                 target_dof_pos)
 
         self.pd_control(self.loco_controller, self.target_dof_pos)
-        if usb_right.damping_signal:
+        # if usb_right.damping_signal:
+        if service_controller.get_status().values['signal'].values['damping_signal']:
             self.damping_state()
         # send the command
         if debug:
@@ -700,8 +727,10 @@ class Runner_online_real_dexhand(Runner_online_real):
 
         if manual:
             cmd_raw = self.squat_controller.config.cmd_debug.copy()
-            cmd_raw[0] = usb_left.lx
-            cmd_raw[1] = usb_right.rx
+            cmd_raw[0] = service_controller.get_status().values('joystick').values('Lx')
+            cmd_raw[1] = service_controller.get_status().values('joystick').values('Rx')
+            # cmd_raw[0] = usb_left.lx
+            # cmd_raw[1] = usb_right.rx
         else:
             cmd_raw = None
 
@@ -710,7 +739,8 @@ class Runner_online_real_dexhand(Runner_online_real):
 
         self.transition_squat()
         self.pd_control(self.squat_controller, self.target_dof_pos)
-        if usb_right.damping_signal:
+        if service_controller.get_status().values['signal'].values['damping_signal']:
+     # if usb_right.damping_signal:  
             self.damping_state()
         # send the command
         if debug:
@@ -819,8 +849,10 @@ class Runner_handle_mujoco(Runner):
 
             if manual:
                 cmd_raw = self.squat_controller.config.cmd_debug.copy()
-                cmd_raw[0] = usb_left.lx  # height
-                cmd_raw[1] = usb_right.rx
+                cmd_raw[0] = service_controller.get_status().values('joystick').values('Lx')
+                cmd_raw[1] = service_controller.get_status().values('joystick').values('Rx')
+                # cmd_raw[0] = usb_left.lx  # height
+                # cmd_raw[1] = usb_right.rx
                 # print(cmd_raw)
             else:
                 cmd_raw = None
@@ -851,9 +883,12 @@ class Runner_handle_mujoco(Runner):
 
             if manual:
                 cmd_raw = self.loco_controller.config.cmd_debug.copy()
-                cmd_raw[0] = usb_left.lx
-                cmd_raw[1] = usb_left.ly
-                cmd_raw[2] = usb_right.ry
+                cmd_raw[0] = service_controller.get_status().values('joystick').values('Lx')
+                cmd_raw[1] = service_controller.get_status().values('joystick').values('Ly')
+                cmd_raw[2] = service_controller.get_status().values('joystick').values('Ry')
+                # cmd_raw[0] = usb_left.lx
+                # cmd_raw[1] = usb_left.ly
+                # cmd_raw[2] = usb_right.ry
                 # print(cmd_raw)
             else:
                 cmd_raw = None
