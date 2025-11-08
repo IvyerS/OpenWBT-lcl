@@ -181,7 +181,7 @@ ifconfig | grep inet
 Assuming the local IP address is 192.168.123.2:
 
 ```bash
-mkcert -install && mkcert -cert-file cert.pem -key-file key.pem 192.168.123.2 localhost 127.0.0.1 # Replace with your actual IP address
+mkcert -install && mkcert -cert-file cert.pem -key-file key.pem 192.168.123.2 localhost 127.0.0.1 # Replace with your actual wifi IP address
 ```
 
 - Copy the generated cert.pem and key.pem files to the teleop directory of the project

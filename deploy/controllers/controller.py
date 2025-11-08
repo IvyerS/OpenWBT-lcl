@@ -177,8 +177,7 @@ class Runner:
     def post_squat(self):
         if self.locoable():
             # self.transfer_to_loco = usb_left.run_loco_signal
-            self.transfer_to_loco = service_controller.get_status().values['signal'].values['run_loco_signal']
-    
+            self.transfer_to_loco = service_controller.get_status()['signals']['run_loco_signal']
             if self.transfer_to_loco:
                 self.loco_controller.stance_command = False
                 self.loco_controller.set_transition_count()
@@ -187,9 +186,9 @@ class Runner:
     def post_loco(self):
         if self.stopable():
            #self.loco_controller.stance_command = usb_left.stopgait_signal
-            self.loco_controller.stance_command = service_controller.get_status().values['signal'].values['stopgait_signal']
+            self.loco_controller.stance_command = service_controller.get_status()['signals']['stopgait_signal']
             # self.transfer_to_squat = usb_right.run_squat_signal
-            self.transfer_to_squat = service_controller.get_status().values['signal'].values['run_squat_signal']
+            self.transfer_to_squat = service_controller.get_status()['signals']['run_squat_signal']
             if self.transfer_to_squat:
                 self.squat_controller.set_transition_count()
 
@@ -338,7 +337,7 @@ class Runner_online_real(Runner_online):
     def damping_state(self):
         print("Enter damping state.")
         print("Waiting for the Right_Start signal...")
-        while not service_controller.get_status().values['signal'].values['start_signal']:
+        while not service_controller.get_status()['signals']['start_signal']:
         # while not usb_right.start_signal:
             create_damping_cmd(self.low_cmd)
             self.send_cmd(self.low_cmd)
@@ -370,7 +369,7 @@ class Runner_online_real(Runner_online):
         print("Waiting for the Right_Start_Long signal...")
 
         # while not usb_right.run_signal:
-        while not service_controller.get_status().values['signal'].values['run_signal']:
+        while not service_controller.get_status()['signals']['run_signal']:
             self.pd_control(self.default_controller, default_pos)
             self.send_cmd(self.low_cmd)
             time.sleep(self.config.control_dt)
@@ -421,9 +420,10 @@ class Runner_online_real(Runner_online):
             # cmd_raw[0] = usb_left.lx
             # cmd_raw[1] = usb_left.ly
             # cmd_raw[2] = usb_right.ry
-            cmd_raw[0] = service_controller.get_status().values['joystick'].values['Lx']
-            cmd_raw[1] = service_controller.get_status().values['joystick'].values['Ly']
-            cmd_raw[2] = service_controller.get_status().values['joystick'].values['Ry']
+            
+            cmd_raw[0] = service_controller.get_status()['joystick']['Lx']
+            cmd_raw[1] = service_controller.get_status()['joystick']['Ly']
+            cmd_raw[2] = service_controller.get_status()['joystick']['Ry']
         else:
             cmd_raw = None
 
@@ -433,7 +433,7 @@ class Runner_online_real(Runner_online):
 
         self.pd_control(self.loco_controller, self.target_dof_pos)
         # if usb_right.damping_signal:
-        if service_controller.get_status().values['signal'].values['damping_signal']:
+        if service_controller.get_status()['signals']['damping_signal']:
             self.damping_state()
         # send the command
         if debug:
@@ -464,8 +464,8 @@ class Runner_online_real(Runner_online):
 
         if manual:
             cmd_raw = self.squat_controller.config.cmd_debug.copy()
-            cmd_raw[0] = service_controller.get_status().values['joystick'].values['Lx']
-            cmd_raw[1] = service_controller.get_status().values['joystick'].values['Rx']
+            cmd_raw[0] = service_controller.get_status()['joystick']['Lx']
+            cmd_raw[1] = service_controller.get_status()['joystick']['Rx']
             # cmd_raw[0] = usb_left.lx  # height
             # cmd_raw[1] = usb_right.rx
         else:
@@ -477,7 +477,7 @@ class Runner_online_real(Runner_online):
         self.transition_squat()
         self.pd_control(self.squat_controller, self.target_dof_pos)
         # if usb_right.damping_signal:
-        if service_controller.get_status().values['signal'].values['damping_signal']:
+        if service_controller.get_status()['signals']['damping_signal']:
             self.damping_state()
         # send the command
         if debug:
@@ -579,7 +579,7 @@ class Runner_online_real_dexhand(Runner_online_real):
             print("[Dex3_1_Controller] Waiting to subscribe dds...")
 
     def send_cmd(self, cmd: Union[LowCmdGo, LowCmdHG]):
-        if abs(self.tau_record).max() > 100 or service_controller.get_status().values['signal'].values['damping_signal']:
+        if abs(self.tau_record).max() > 100 or service_controller.get_status()['signals']['damping_signal']:
         # if abs(self.tau_record).max() > 100 or usb_right.damping_signal:  # abs(self.tau_record).max() > 100 or
             print("large tau: ", np.arange(29)[abs(self.tau_record) > 100])
             create_damping_cmd(self.low_cmd)
@@ -639,12 +639,12 @@ class Runner_online_real_dexhand(Runner_online_real):
         state_data = np.concatenate((np.array(self.left_hand_state_array[:]), np.array(self.right_hand_state_array[:])))
 
        #if usb_left.left_hand_grasp_state == True:
-        if service_controller.get_status().values['signal'].values['left_hand_grasp_state'] == True:
+        if service_controller.get_status()['signals']['left_hand_grasp_state'] == True:
             self.left_q_target = np.array([0.0, 0.5, 1.0, -1.0, -1.0, -1.0, -1.0])
         else:
             self.left_q_target = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 
-        if service_controller.get_status().values['signal'].values['right_hand_grasp_state'] == True:
+        if service_controller.get_status()['signals']['right_hand_grasp_state'] == True:
         # if usb_right.right_hand_grasp_state == True:
             self.right_q_target = np.array([0.0, -0.5, -1.0, 1.0, 1.0, 1.0, 1.0])
         else:
@@ -674,9 +674,9 @@ class Runner_online_real_dexhand(Runner_online_real):
 
         if manual:
             cmd_raw = self.loco_controller.config.cmd_debug.copy()
-            cmd_raw[0] = service_controller.get_status().values['joystick'].values['Lx']
-            cmd_raw[1] = service_controller.get_status().values['joystick'].values['Ly']
-            cmd_raw[2] = service_controller.get_status().values['joystick'].values['Ry']
+            cmd_raw[0] = service_controller.get_status()['joystick']['Lx']
+            cmd_raw[1] = service_controller.get_status()['joystick']['Ly']
+            cmd_raw[2] = service_controller.get_status()['joystick']['Ry']
             # cmd_raw[0] = usb_left.lx
             # cmd_raw[1] = usb_left.ly
             # cmd_raw[2] = usb_right.ry
@@ -694,7 +694,7 @@ class Runner_online_real_dexhand(Runner_online_real):
 
         self.pd_control(self.loco_controller, self.target_dof_pos)
         # if usb_right.damping_signal:
-        if service_controller.get_status().values['signal'].values['damping_signal']:
+        if service_controller.get_status()['signals']['damping_signal']:
             self.damping_state()
         # send the command
         if debug:
@@ -727,8 +727,8 @@ class Runner_online_real_dexhand(Runner_online_real):
 
         if manual:
             cmd_raw = self.squat_controller.config.cmd_debug.copy()
-            cmd_raw[0] = service_controller.get_status().values('joystick').values('Lx')
-            cmd_raw[1] = service_controller.get_status().values('joystick').values('Rx')
+            cmd_raw[0] = service_controller.get_status()['joystick']['Lx']
+            cmd_raw[1] = service_controller.get_status()['joystick']['Rx']
             # cmd_raw[0] = usb_left.lx
             # cmd_raw[1] = usb_right.rx
         else:
@@ -739,7 +739,7 @@ class Runner_online_real_dexhand(Runner_online_real):
 
         self.transition_squat()
         self.pd_control(self.squat_controller, self.target_dof_pos)
-        if service_controller.get_status().values['signal'].values['damping_signal']:
+        if service_controller.get_status()['signals']['damping_signal']:
      # if usb_right.damping_signal:  
             self.damping_state()
         # send the command
@@ -849,8 +849,8 @@ class Runner_handle_mujoco(Runner):
 
             if manual:
                 cmd_raw = self.squat_controller.config.cmd_debug.copy()
-                cmd_raw[0] = service_controller.get_status().values('joystick').values('Lx')
-                cmd_raw[1] = service_controller.get_status().values('joystick').values('Rx')
+                cmd_raw[0] = service_controller.get_status()['joystick']['Lx']
+                cmd_raw[1] = service_controller.get_status()['joystick']['Rx']
                 # cmd_raw[0] = usb_left.lx  # height
                 # cmd_raw[1] = usb_right.rx
                 # print(cmd_raw)
@@ -883,9 +883,9 @@ class Runner_handle_mujoco(Runner):
 
             if manual:
                 cmd_raw = self.loco_controller.config.cmd_debug.copy()
-                cmd_raw[0] = service_controller.get_status().values('joystick').values('Lx')
-                cmd_raw[1] = service_controller.get_status().values('joystick').values('Ly')
-                cmd_raw[2] = service_controller.get_status().values('joystick').values('Ry')
+                cmd_raw[0] = service_controller.get_status()['joystick']['Lx']
+                cmd_raw[1] = service_controller.get_status()['joystick']['Ly']
+                cmd_raw[2] = service_controller.get_status()['joystick']['Ry']
                 # cmd_raw[0] = usb_left.lx
                 # cmd_raw[1] = usb_left.ly
                 # cmd_raw[2] = usb_right.ry
