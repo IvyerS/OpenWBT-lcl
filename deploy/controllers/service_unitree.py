@@ -333,69 +333,64 @@ class UnitreeControllerService:
         """获取控制器实例"""
         return self.controller
         
-    def get_status(self) -> Dict[str, Any]:
-        """获取服务状态"""
-        return {
-            'is_running': self.is_running,
-            'signals': self.controller.get_all_signals() if self.controller else {},
-            'joystick': self.controller.get_joystick_values() if self.controller else {}
-        }
+
+
 
 # 使用示例和测试
-def main():
-    """主程序 - 服务模式运行"""
-    # 创建服务实例
-    service = UnitreeControllerService()
+# def main():
+#     """主程序 - 服务模式运行"""
+#     # 创建服务实例
+#     service = UnitreeControllerService()
     
-    # 定义回调函数
-    def on_button_press(button_name: str, state: int):
-        print(f"🎮 按钮 {button_name} 状态: {state}")
-        if button_name == 'Start' and state == 1:
-            print("🚀 开始执行任务!")
-        elif button_name == 'A' and state == 1:
-            print("🏃 进入运动模式!")
+#     # 定义回调函数
+#     def on_button_press(button_name: str, state: int):
+#         print(f"🎮 按钮 {button_name} 状态: {state}")
+#         if button_name == 'Start' and state == 1:
+#             print("🚀 开始执行任务!")
+#         elif button_name == 'A' and state == 1:
+#             print("🏃 进入运动模式!")
     
-    def global_update_callback(controller: EnhancedUnitreeController):
-        # 每次数据更新时都会调用
-        signals = controller.get_all_signals()
-        if signals['run_signal']:
-            print("📡 检测到运行信号...")
-        else:
-            print("📡 未检测到运行信号...")
-        if signals['start_signal']:
-            print("📡 检测到启动信号...")
-        else:
-            print("📡 未检测到启动信号...")
-        if signals['damping_signal']:
-            print("📡 检测到阻尼模式信号...")
-        else:
-            print("📡 未检测到阻尼模式信号...")
-        if signals['run_squat_signal']:
-            print("📡 检测到下蹲模式信号...")
-        else:
-            print("📡 未检测到下蹲模式信号...")
-        if signals['left_hand_grasp_state']:
-            print("🤚 左手抓取状态: 抓取中...")
-        if signals['right_hand_grasp_state']:
-            print("🤚 右手抓取状态: 抓取中...")
+#     def global_update_callback(controller: EnhancedUnitreeController):
+#         # 每次数据更新时都会调用
+#         signals = controller.get_all_signals()
+#         if signals['run_signal']:
+#             print("📡 检测到运行信号...")
+#         else:
+#             print("📡 未检测到运行信号...")
+#         if signals['start_signal']:
+#             print("📡 检测到启动信号...")
+#         else:
+#             print("📡 未检测到启动信号...")
+#         if signals['damping_signal']:
+#             print("📡 检测到阻尼模式信号...")
+#         else:
+#             print("📡 未检测到阻尼模式信号...")
+#         if signals['run_squat_signal']:
+#             print("📡 检测到下蹲模式信号...")
+#         else:
+#             print("📡 未检测到下蹲模式信号...")
+#         if signals['left_hand_grasp_state']:
+#             print("🤚 左手抓取状态: 抓取中...")
+#         if signals['right_hand_grasp_state']:
+#             print("🤚 右手抓取状态: 抓取中...")
 
-    # 注册回调-查看年signals变化
-    # service.register_global_callback(global_update_callback)
+#     # 注册回调-查看年signals变化
+#     # service.register_global_callback(global_update_callback)
     
-    # 启动服务
-    if service.start():
-        try:
-            while True:
-                time.sleep(0.1)
-        except KeyboardInterrupt:
-            print("\n收到中断信号，正在停止...")
-        finally:
-            # 确保服务被停止
-            service.stop()
+#     # 启动服务
+#     if service.start():
+#         try:
+#             while True:
+#                 time.sleep(0.1)
+#         except KeyboardInterrupt:
+#             print("\n收到中断信号，正在停止...")
+#         finally:
+#             # 确保服务被停止
+#             service.stop()
             
-        print("程序结束")
-    else:
-        print("服务启动失败")
+#         print("程序结束")
+#     else:
+#         print("服务启动失败")
 
-if __name__ == '__main__':
-    main()
+# if __name__ == '__main__':
+    # main()

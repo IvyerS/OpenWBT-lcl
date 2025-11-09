@@ -677,6 +677,7 @@ class Runner_online_real_dexhand(Runner_online_real):
             cmd_raw[0] = service_controller.get_status()['joystick']['Lx']
             cmd_raw[1] = service_controller.get_status()['joystick']['Ly']
             cmd_raw[2] = service_controller.get_status()['joystick']['Ry']
+            # 想要 前后LY 左右LX 旋转RY
             # cmd_raw[0] = usb_left.lx
             # cmd_raw[1] = usb_left.ly
             # cmd_raw[2] = usb_right.ry
@@ -727,8 +728,8 @@ class Runner_online_real_dexhand(Runner_online_real):
 
         if manual:
             cmd_raw = self.squat_controller.config.cmd_debug.copy()
-            cmd_raw[0] = service_controller.get_status()['joystick']['Lx']
-            cmd_raw[1] = service_controller.get_status()['joystick']['Rx']
+            cmd_raw[0] = service_controller.get_status()['joystick']['Ly']
+            cmd_raw[1] = service_controller.get_status()['joystick']['Ry']
             # cmd_raw[0] = usb_left.lx
             # cmd_raw[1] = usb_right.rx
         else:

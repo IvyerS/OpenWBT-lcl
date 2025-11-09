@@ -211,5 +211,5 @@ Enable path: Settings >> Apps >> Safari Browser >> Advanced >> Feature Flags >> 
 Open the browser on Apple Vision Pro and enter:
 ```https://192.168.123.2:8012?ws=wss://192.168.123.2:8012```
 Click "Enter VR" and allow tracking to view the camera feed.
-*Note: Replace with your actual IP address.*
+*Note: Replace with your actual wifi IP address.*
 
