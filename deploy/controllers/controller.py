@@ -88,6 +88,7 @@ class Controller_loco(Controller):
             return
         cmd = cmd_raw * self.config.max_cmd
         cmd_mask = np.abs(cmd) >= self.config.cmd_clip
+        # Log stance state so we can see whether zeroing happens here
         self.loco_cmd = cmd * cmd_mask
         # self.loco_cmd = cmd
         if self.stance_command:
@@ -96,7 +97,9 @@ class Controller_loco(Controller):
     def run(self, cmd_raw, gravity_orientation, omega, qj_obs, dqj_obs, target_dof_pos):
         self.compute_loco_cmd(cmd_raw)
         # breakpoint()
+        print("[run] loco_cmd before update_gait_phase:", self.loco_cmd)
         self.loco_low_level_policy.gait_planner.update_gait_phase(self.stance_command)
+        print("[run] loco_cmd before inference,", self.loco_cmd)
         self.obs, self.action, target_dof_pos[self.config.action_idx] = self.loco_low_level_policy.inference(
             self.loco_cmd,
             gravity_orientation,
@@ -191,6 +194,7 @@ class Runner:
         if self.stopable():
            #self.loco_controller.stance_command = usb_left.stopgait_signal
             if service_controller.get_status()['signals']['stopgait_signal']:
+                print("stopgait_signal is true and also the stance command is set")
                 self.loco_controller.stance_command = True
             else:
                 self.loco_controller.stance_command = False
@@ -432,10 +436,10 @@ class Runner_online_real(Runner_online):
             # cmd_raw[0] = usb_left.lx
             # cmd_raw[1] = usb_left.ly
             # cmd_raw[2] = usb_right.ry
-            
-            cmd_raw[0] = service_controller.get_status()['joystick']['Lx']
-            cmd_raw[1] = service_controller.get_status()['joystick']['Ly']
-            cmd_raw[2] = service_controller.get_status()['joystick']['Ry']
+            print("getting joystick data from service_controller.......")
+            cmd_raw[0] = service_controller.get_status()['joystick']['Ly']
+            cmd_raw[1] =-service_controller.get_status()['joystick']['Lx']
+            cmd_raw[2] =-service_controller.get_status()['joystick']['Rx']
         else:
             cmd_raw = None
 
@@ -686,9 +690,9 @@ class Runner_online_real_dexhand(Runner_online_real):
 
         if manual:
             cmd_raw = self.loco_controller.config.cmd_debug.copy()
-            cmd_raw[0] = service_controller.get_status()['joystick']['Lx']
-            cmd_raw[1] = service_controller.get_status()['joystick']['Ly']
-            cmd_raw[2] = service_controller.get_status()['joystick']['Ry']
+            cmd_raw[0] = service_controller.get_status()['joystick']['Ly']
+            cmd_raw[1] =-service_controller.get_status()['joystick']['Lx']
+            cmd_raw[2] =-service_controller.get_status()['joystick']['Rx']
             # 想要 前后LY 左右LX 旋转RY
             # cmd_raw[0] = usb_left.lx
             # cmd_raw[1] = usb_left.ly
@@ -896,13 +900,13 @@ class Runner_handle_mujoco(Runner):
 
             if manual:
                 cmd_raw = self.loco_controller.config.cmd_debug.copy()
-                cmd_raw[0] = service_controller.get_status()['joystick']['Lx']
-                cmd_raw[1] = service_controller.get_status()['joystick']['Ly']
-                cmd_raw[2] = service_controller.get_status()['joystick']['Ry']
+                cmd_raw[0] = service_controller.get_status()['joystick']['Ly']
+                cmd_raw[1] =-service_controller.get_status()['joystick']['Lx']
+                cmd_raw[2] =-service_controller.get_status()['joystick']['Rx']
+                print("here is the first data getting from service_controller......:",cmd_raw)
                 # cmd_raw[0] = usb_left.lx
                 # cmd_raw[1] = usb_left.ly
                 # cmd_raw[2] = usb_right.ry
-                # print(cmd_raw)
             else:
                 cmd_raw = None
             if not self.transition_loco():

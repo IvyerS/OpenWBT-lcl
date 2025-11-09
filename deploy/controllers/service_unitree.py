@@ -212,9 +212,6 @@ class EnhancedCustom:
             self.controller.start_signal = False
             self.controller.run_signal = False
 
-        if self.controller.get_button_state('Y') == 1:
-            self.controller.stopgait_signal = not self.controller.stopgait_signal
-        
         #  UP - damping mode
         if self.controller.get_button_state('Up') == 1:
             self.controller.damping_signal = True
@@ -227,15 +224,15 @@ class EnhancedCustom:
         else:
             self.controller.run_squat_signal = False
         
-        # 摇杆控制手抓状态
-        if joystick_values['Ry'] > 0.9:
+        # 修改手抓状态逻辑 使用按下一个按键和摇杆控制？
+        if joystick_values['Ry'] > 0.9 and self.controller.get_button_state('R1') == 1:
             self.controller.right_hand_grasp_state = True
-        elif joystick_values['Ry'] < 0.2:
+        elif self.controller.get_button_state('R1') == 0:
             self.controller.right_hand_grasp_state = False
 
-        if joystick_values['Ly'] > 0.9:
+        if joystick_values['Ly'] > 0.9 and self.controller.get_button_state('L1') == 1:
             self.controller.left_hand_grasp_state = True
-        elif joystick_values['Ly'] < 0.2:
+        elif self.controller.get_button_state('L1') == 0:
             self.controller.left_hand_grasp_state = False
 
     def stop(self):
