@@ -332,6 +332,14 @@ class UnitreeControllerService:
     def get_controller(self) -> EnhancedUnitreeController:
         """获取控制器实例"""
         return self.controller
+    
+    def get_status(self) -> Dict[str, Any]:
+        """获取服务状态"""
+        return {
+            'is_running': self.is_running,
+            'signals': self.controller.get_all_signals() if self.controller else {},
+            'joystick': self.controller.get_joystick_values() if self.controller else {}
+        }
         
 
 

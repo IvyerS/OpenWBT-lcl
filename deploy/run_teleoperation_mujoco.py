@@ -92,7 +92,8 @@ def deploy_handle_mujoco(args):
                 if runner.transfer_to_squat:
                     current_mode = "SQUAT"
                     print('Squat mode!')
-                    print('Press Left_A to start the locomotion mode!')
+                    print('Press A to start the locomotion mode!')
+                   #print('Press Left_A to start the locomotion mode!')
 
             elif current_mode == "SQUAT":
                 tv_arms()
@@ -101,7 +102,7 @@ def deploy_handle_mujoco(args):
                 if runner.transfer_to_loco:
                     current_mode = "LOCOMOTION"
                     print('Locomotion mode!')
-                    print('Press Right_A to start the squat mode!')
+                    print('Press Down to start the squat mode!')
             np.copyto(tv_img_array, np.array(runner.render_image))
 
             # cv2.imshow("camera_view", cv2.cvtColor(runner.render_image, cv2.COLOR_RGB2BGR))

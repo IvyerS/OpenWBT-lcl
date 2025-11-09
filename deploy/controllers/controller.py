@@ -177,7 +177,11 @@ class Runner:
     def post_squat(self):
         if self.locoable():
             # self.transfer_to_loco = usb_left.run_loco_signal
-            self.transfer_to_loco = service_controller.get_status()['signals']['run_loco_signal']
+            if service_controller.get_status()['signals']['run_loco_signal']:
+                self.transfer_to_loco = True
+            else:
+                self.transfer_to_loco = False
+            # import pdb; pdb.set_trace()
             if self.transfer_to_loco:
                 self.loco_controller.stance_command = False
                 self.loco_controller.set_transition_count()
@@ -186,9 +190,17 @@ class Runner:
     def post_loco(self):
         if self.stopable():
            #self.loco_controller.stance_command = usb_left.stopgait_signal
-            self.loco_controller.stance_command = service_controller.get_status()['signals']['stopgait_signal']
+            if service_controller.get_status()['signals']['stopgait_signal']:
+                self.loco_controller.stance_command = True
+            else:
+                self.loco_controller.stance_command = False
+            # self.loco_controller.stance_command = service_controller.get_status()['signals']['stopgait_signal']
             # self.transfer_to_squat = usb_right.run_squat_signal
-            self.transfer_to_squat = service_controller.get_status()['signals']['run_squat_signal']
+            # self.transfer_to_squat = service_controller.get_status()['signals']['run_squat_signal']
+            if service_controller.get_status()['signals']['run_squat_signal']:
+                self.transfer_to_squat = True
+            else:
+                self.transfer_to_squat = False
             if self.transfer_to_squat:
                 self.squat_controller.set_transition_count()
 
@@ -850,10 +862,10 @@ class Runner_handle_mujoco(Runner):
 
             if manual:
                 cmd_raw = self.squat_controller.config.cmd_debug.copy()
-                cmd_raw[0] = service_controller.get_status()['joystick']['Lx']
-                cmd_raw[1] = service_controller.get_status()['joystick']['Rx']
+                cmd_raw[0] = service_controller.get_status()['joystick']['Ly']
+                cmd_raw[1] = service_controller.get_status()['joystick']['Ry']
                 # cmd_raw[0] = usb_left.lx  # height
-                # cmd_raw[1] = usb_right.rx
+                # cmd_raw[1] = usb_right.rx # pitch
                 # print(cmd_raw)
             else:
                 cmd_raw = None
