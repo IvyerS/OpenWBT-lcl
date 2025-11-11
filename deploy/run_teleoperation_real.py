@@ -26,6 +26,7 @@ tv_img_array = np.ndarray(tv_img_shape, dtype=tv_img_dtype, buffer=tv_img_shm.bu
 img_client = ImageClient(tv_img_shape=tv_img_shape,
                          tv_img_shm_name=tv_img_shm.name)  # , server_address='10.100.6.192', port=8012
 
+
 image_receive_thread = threading.Thread(target=img_client.receive_process, daemon=True)
 image_receive_thread.start()
 
@@ -97,7 +98,7 @@ def deploy_real(args):
             if runner.transfer_to_squat:
                 current_mode = "SQUAT"
                 print('Squat mode!')
-                print('Press Left_A to start the locomotion mode!')
+                print('Press A to start the locomotion mode!')
 
         elif current_mode == "SQUAT":
             tv_arms()
@@ -105,7 +106,7 @@ def deploy_real(args):
             if runner.transfer_to_loco:
                 current_mode = "LOCOMOTION"
                 print('Locomotion mode!')
-                print('Press Right_A to start the squat mode!')
+                print('Press Down to start the squat mode!')
 
         # cv2.imshow("camera_view", cv2.cvtColor(runner.render_image, cv2.COLOR_RGB2BGR))
         # cv2.waitKey(1)

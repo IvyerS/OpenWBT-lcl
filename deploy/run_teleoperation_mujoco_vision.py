@@ -18,8 +18,15 @@ tv_img_shape = (480, 1280, 3)
 tv_img_dtype = np.uint8
 tv_img_shm = shared_memory.SharedMemory(create = True, size = np.prod(tv_img_shape) * np.uint8().itemsize)
 tv_img_array = np.ndarray(tv_img_shape, dtype = tv_img_dtype, buffer = tv_img_shm.buf)
-# img_client = ImageClient(tv_img_shape = tv_img_shape, tv_img_shm_name = tv_img_shm.name)
 
+# client = ImageClient(image_show=True, server_address='192.168.123.164', Unit_Test=False)  # deployment test
+# client.receive_process()
+
+# img_client = ImageClient(tv_img_shape=tv_img_shape,
+#                          tv_img_shm_name=tv_img_shm.name)
+#                         #  server_address='10.7.127.146', 
+#                         #  port=8012)  # , server_address='10.100.6.192', port=8012
+# # img_client = ImageClient(image_show=True,tv_img_shape = tv_img_shape, tv_img_shm_name = tv_img_shm.name)
 # image_receive_thread = threading.Thread(target = img_client.receive_process, daemon = True)
 # image_receive_thread.start()
 
@@ -135,10 +142,16 @@ def deploy_handle_mujoco(args):
                     print('Press Right_Joystick to start the squat mode!')
             # runner.run_homie(manual=True)
             # viewer.sync()
-            np.copyto(tv_img_array, np.array(runner.render_image))
 
+            # 传入图片属于是仿真/本地渲染生成的，可以传入读取到的实时画面吗？ todo注释 使用sharememory
+            np.copyto(tv_img_array, np.array(runner.render_image))
             cv2.imshow("camera_view", cv2.cvtColor(runner.render_image, cv2.COLOR_RGB2BGR))
+            # cv2.waitKey(1)
+
+            #想要展现实时画面的话：下面的会是一片漆黑，其实是无法进行实时的显示的 自己修改的部分
+            # cv2.imshow("camera_view", cv2.cvtColor(tv_img_array, cv2.COLOR_RGB2BGR))
             cv2.waitKey(1)
+
     tv_img_shm.unlink()
     tv_img_shm.close()
 

@@ -352,7 +352,7 @@ class Runner_online_real(Runner_online):
 
     def damping_state(self):
         print("Enter damping state.")
-        print("Waiting for the Right_Start signal...")
+        print("Waiting for the X_start command...")
         while not service_controller.get_status()['signals']['start_signal']:
         # while not usb_right.start_signal:
             create_damping_cmd(self.low_cmd)
@@ -382,7 +382,7 @@ class Runner_online_real(Runner_online):
             time.sleep(self.config.control_dt)
 
         print("Enter default pos state.")
-        print("Waiting for the Right_Start_Long signal...")
+        print("Waiting for the Start signal...")
 
         # while not usb_right.run_signal:
         while not service_controller.get_status()['signals']['run_signal']:
